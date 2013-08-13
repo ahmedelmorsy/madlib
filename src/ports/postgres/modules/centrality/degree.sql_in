@@ -1,0 +1,53 @@
+/* ----------------------------------------------------------------------- *//**
+ *
+ * @file linear.sql_in
+ *
+ * @brief SQL functions for linear regression
+ * @date January 2011
+ *
+ * @sa For a brief introduction to linear regression, see the module
+ *     description \ref grp_linreg.
+ *
+ *//* ----------------------------------------------------------------------- */
+
+m4_include(`SQLCommon.m4')
+
+-- CREATE TYPE MADLIB_SCHEMA.degcent_result AS (
+--     vertex DOUBLE PRECISION[],
+--     degree DOUBLE PRECISION[]
+-- );
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.degcent_transition(
+    state MADLIB_SCHEMA.bytea8,
+    v1 INTEGER,
+    v2 INTEGER)
+RETURNS MADLIB_SCHEMA.bytea8
+AS 'MODULE_PATHNAME'
+LANGUAGE C
+IMMUTABLE STRICT;
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.degcent_merge_states(
+    state1 MADLIB_SCHEMA.bytea8,
+    state2 MADLIB_SCHEMA.bytea8)
+RETURNS MADLIB_SCHEMA.bytea8
+AS 'MODULE_PATHNAME'
+LANGUAGE C
+IMMUTABLE STRICT;
+
+-- Final functions
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.degcent_final(
+    state MADLIB_SCHEMA.bytea8)
+RETURNS MADLIB_SCHEMA.bytea8
+AS 'MODULE_PATHNAME'
+LANGUAGE C IMMUTABLE STRICT;
+
+CREATE AGGREGATE MADLIB_SCHEMA.degcent(
+    /*+ "dependentVariable" */ INTEGER,
+    /*+ "independentVariables" */ INTEGER) (
+
+    SFUNC=MADLIB_SCHEMA.degcent_transition,
+    STYPE=MADLIB_SCHEMA.bytea8,
+    FINALFUNC=MADLIB_SCHEMA.degcent_final,
+    m4_ifdef(`__GREENPLUM__',`prefunc=MADLIB_SCHEMA.degcent_merge_states,')
+    INITCOND=''
+);
